@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 var request = require('request');
 var filed = require('filed');
 var cheerio = require('cheerio');
@@ -5,9 +7,9 @@ var url = require('url');
 var fs = require('fs');
 var async = require('async');
 var mkdirp = require('mkdirp');
+var program = require('commander');
 
 var courseraClassName = 'startup-001';
-var courseraClassUri = 'https://class.coursera.org/' + courseraClassName + '/lecture/index';
 
 function clean_filename(fname) {
   
@@ -109,7 +111,8 @@ queue.drain = function() {
     console.log("All files are downloaded");
 };
 
-request({
+function login(user,pwd) {
+  request({
     headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.2 Safari/537.36',
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -117,16 +120,18 @@ request({
         Connection: 'keep-alive'
     },
     uri: 'https://www.coursera.org/account/signin'
-}).auth('rcottiss@cottiss.com', 'holistic', true);
+  }).auth(user, pwd, true);
+}
 
-request({
+function getFiles(courseClassUri) {
+  request({
     headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.2 Safari/537.36',
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-us',
         Connection: 'keep-alive'
     },
-    uri: courseraClassUri}, function (error, response, body1) {
+    uri: courseClassUri}, function (error, response, body1) {
     if (!error && response.statusCode == 200) {
         //console.log(body1); // Print the google web page.
         
@@ -177,4 +182,16 @@ $('h4').click(function() {
       
     }
 
-    });
+  });
+}
+
+program
+  .version('0.0.1')
+  .option('-u, --user <user>', 'Coursera Username')
+  .option('-p, --pwd <pwd>', 'Coursera Password')
+  .option('-c, --class <className>', 'Class Name')
+  .parse(process.argv);
+
+login(program.user,program.pwd);
+var courseraClassUri = 'https://class.coursera.org/' + program.class + '/lecture/index';
+getFiles(courseraClassUri);
