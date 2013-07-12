@@ -10,6 +10,7 @@ var mkdirp = require('mkdirp');
 var program = require('commander');
 
 var courseraClassName = 'startup-001';
+var queueSize = 4;
 
 function clean_filename(fname) {
 
@@ -99,11 +100,7 @@ function download_mp4(task, callback) {
 
 }
 
-var queue = async.queue(download_mp4, 2); // Run two simultaneous downloads
 
-queue.drain = function() {
-    console.log("All files are downloaded");
-};
 
 function login(user,pwd) {
   request({
@@ -189,7 +186,14 @@ program
   .option('-u, --user <user>', 'Coursera Username')
   .option('-p, --pwd <pwd>', 'Coursera Password')
   .option('-c, --class <className>', 'Class Name')
+  .option('-q, --queue <queueSize>', 'Number of concurrent tasks <4>',queueSize)
   .parse(process.argv);
+
+var queue = async.queue(download_mp4, program.queueSize); // Run two simultaneous downloads
+
+queue.drain = function() {
+    console.log("All files are downloaded");
+};
 
 login(program.user,program.pwd);
 var courseraClassUri = 'https://class.coursera.org/' + program.class + '/lecture/index';
