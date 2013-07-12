@@ -68,13 +68,11 @@ function download_mp4(task, callback) {
 
   //var downloadPath = temp.path({prefix: 'singlePageRaw', suffix: '.mp4'});
 
-  console.log('Starting: ' + lectureTitle);
   outFileName = courseraClassName + '/' + lectureTitle + '/' + outFileName.replace(/\//g, '_') + '.mp4';
-  console.log('outFileName: ' + outFileName);
+  console.log('Lecture: $s - FileName: %s',lectureTitle,outFileName);
 
   mkdirp(courseraClassName + '/' + lectureTitle, function(err) {
     if (err) console.error(err);
-        else console.log('Created folder: ' + courseraClassName + '/' + lectureTitle);
   });
 
   fs.exists(outFileName, function(exists) {
@@ -182,14 +180,14 @@ $('h4').click(function() {
 }
 
 program
-  .version('0.0.1')
+  .version('0.0.2')
   .option('-u, --user <user>', 'Coursera Username')
   .option('-p, --pwd <pwd>', 'Coursera Password')
   .option('-c, --class <className>', 'Class Name')
   .option('-q, --queue <queueSize>', 'Number of concurrent tasks <4>',queueSize)
   .parse(process.argv);
 
-var queue = async.queue(download_mp4, program.queueSize); // Run two simultaneous downloads
+var queue = async.queue(download_mp4, program.queue); // Run simultaneous downloads
 
 queue.drain = function() {
     console.log("All files are downloaded");
