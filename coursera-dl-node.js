@@ -12,97 +12,91 @@ var program = require('commander');
 var courseraClassName = 'startup-001';
 
 function clean_filename(fname) {
-  
-  
+
+
   // Keep extension 
   var ext = '';
-  
+
   if (fname.indexOf('.') !== -1) {
     ext = '.' + fname.split('.').pop();
     fname = fname.replace(ext,'');
   }
-  
+
   fname = fname.replace(/\[.*\]/g,'').trim();
-  
+
   fname = fname.replace(/[^a-z0-9]/gi,'_').replace(/_{2,}/g,"_");
-  
+
   fname = fname + ext;
-  
+
   return fname;
 }
 
 function openAndWriteToSystemLog(writeBuffer, callback) {
-    fs.open('./test.mp4', 'w', function opened(err, fd) {
-        if (err) {
-            return callback(err);
-        }
+  fs.open('./test.mp4', 'w', function opened(err, fd) {
+    if (err) {
+      return callback(err);
+    }
 
-        function notifyError(err) {
-            fs.close(fd, function () {
-                callback(err);
-            });
-        }
-        var bufferOffset = 0,
-            bufferLength = writeBuffer.length,
-            filePosition = null;
-        fs.write(fd, writeBuffer, bufferOffset, bufferLength, filePosition,
+    function notifyError(err) {
+      fs.close(fd, function () {
+        callback(err);
+      });
+    }
+    var bufferOffset = 0,
+      bufferLength = writeBuffer.length,
+      filePosition = null;
+    fs.write(fd, writeBuffer, bufferOffset, bufferLength, filePosition,
 
-        function wrote(err, written) {
-            if (err) {
-                return notifyError(err);
-            }
-            fs.close(fd, function () {
-                callback(err);
-            });
-        });
+    function wrote(err, written) {
+      if (err) {
+        return notifyError(err);
+      }
+      fs.close(fd, function () {
+        callback(err);
+      });
     });
+  });
 }
 
 function download_mp4(task, callback) {
-            
   var downloadURL = task.url;
   var lectureTitle = task.weekTitle.split(':')[0].trim();
-  var linkText = task.linkText
-  
+  var linkText = task.linkText;
   var outFileName = clean_filename(linkText);
   lectureTitle = clean_filename(lectureTitle);
-  
-  
+
   //var downloadPath = temp.path({prefix: 'singlePageRaw', suffix: '.mp4'});
-  
-  console.log('Starting: ' + lectureTitle); 
-  outFileName = courseraClassName + '/' + lectureTitle + '/' + outFileName.replace(/\//g,'_') + '.mp4';
+
+  console.log('Starting: ' + lectureTitle);
+  outFileName = courseraClassName + '/' + lectureTitle + '/' + outFileName.replace(/\//g, '_') + '.mp4';
   console.log('outFileName: ' + outFileName);
-  
-  
-                  
-                mkdirp(courseraClassName + '/' + lectureTitle, function (err) {
-                  if (err) console.error(err)
-                  else console.log('Created folder: ' + courseraClassName + '/' + lectureTitle)
-                });
-                                    
-                  fs.exists(outFileName,function (exists) {
-                    if (!exists) {     
-                      
-                      var r2 = request(downloadURL).pipe(fs.createWriteStream(outFileName));
-                      
-                      r2.on('error', function(e) {
-                        console.error('error');
-                        console.error(e);
-                      });                          
-                      
-                      r2.on('finish', function() {
-                         callback();
-                      });
-                      
-                    }
-                    else {
-                      console.log(outFileName + ' exists. Not Downloaded.');
-                      callback();
-                    }
-                    
-                  });
-                    
+
+  mkdirp(courseraClassName + '/' + lectureTitle, function(err) {
+    if (err) console.error(err);
+        else console.log('Created folder: ' + courseraClassName + '/' + lectureTitle);
+  });
+
+  fs.exists(outFileName, function(exists) {
+    if (!exists) {
+
+      var r2 = request(downloadURL).pipe(fs.createWriteStream(outFileName));
+
+      r2.on('error', function(e) {
+        console.error('error');
+        console.error(e);
+      });
+
+      r2.on('finish', function() {
+        callback();
+      });
+
+    } else {
+      console.log(outFileName + ' exists. Not Downloaded.');
+      callback();
+    }
+
+  });
+
 }
 
 var queue = async.queue(download_mp4, 2); // Run two simultaneous downloads
@@ -123,7 +117,12 @@ function login(user,pwd) {
   }).auth(user, pwd, true);
 }
 
-function getFiles(courseClassUri) {
+function getFiles(courseClassName,courseClassUri) {
+
+  mkdirp('./' + courseClassName, function (err) {
+    if (err) console.error(err);
+  });
+
   request({
     headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.2 Safari/537.36',
@@ -134,15 +133,15 @@ function getFiles(courseClassUri) {
     uri: courseClassUri}, function (error, response, body1) {
     if (!error && response.statusCode == 200) {
         //console.log(body1); // Print the google web page.
-        
+
       $ = cheerio.load(body1);
-      
+
         var courseItemList = $('div.course-item-list');
-        
-          
+
+
           $(courseItemList).find('div.course-item-list-header').each(function() {
             var lectureTitle = $(this).find('h3').text();
-            
+
             //console.log(lectureTitle);
 /*
 
@@ -154,18 +153,18 @@ $('h4').click(function() {
     })
 });
 */
-          var ul = $(this).next('ul.course-item-list-section-list')
-          
-          
+          var ul = $(this).next('ul.course-item-list-section-list');
+
+
           //$(ul).find('div.course-lecture-item-resource a[title="Video (MP4)"]').each(function () {
           $(ul).find('li').each(function () {
-            
+
             var linkText = $(this).find('a.lecture-link').text().trim();
-            
+
             //console.log('linktext: ' + linkText);
-            
+
             var res = $(this).find('div.course-lecture-item-resource a[title="Video (MP4)"]');
- 
+
             var mp4Href = $(res).attr('href');
 
             //console.log('mp4link:' + mp4Href.toString());
@@ -173,13 +172,13 @@ $('h4').click(function() {
 
             // Queue your files for upload
             queue.push({weekTitle: lectureTitle, linkText: linkText, url: mp4Href});
-           
-            
+
+
           });
 
-        });     
-      
-      
+        });
+
+
     }
 
   });
@@ -194,4 +193,4 @@ program
 
 login(program.user,program.pwd);
 var courseraClassUri = 'https://class.coursera.org/' + program.class + '/lecture/index';
-getFiles(courseraClassUri);
+getFiles(program.class,courseraClassUri);
