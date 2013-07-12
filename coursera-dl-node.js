@@ -69,7 +69,7 @@ function download_mp4(task, callback) {
   //var downloadPath = temp.path({prefix: 'singlePageRaw', suffix: '.mp4'});
 
   outFileName = courseraClassName + '/' + lectureTitle + '/' + outFileName.replace(/\//g, '_') + '.mp4';
-  console.log('Lecture: $s - FileName: %s',lectureTitle,outFileName);
+  console.log('Lecture: %s - FileName: %s',lectureTitle,outFileName);
 
   mkdirp(courseraClassName + '/' + lectureTitle, function(err) {
     if (err) console.error(err);
